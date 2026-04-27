@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BertViz Web Interface</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --bg: #0f172a;
+            --surface: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15), transparent 25%);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 2rem;
+            text-align: center;
+        }
+
+        h1 {
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0 0 0.5rem 0;
+            font-size: 2.5rem;
+        }
+        
+        p.subtitle {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+            padding: 0 2rem 2rem 2rem;
+            gap: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .controls {
+            flex: 0 0 350px;
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            height: fit-content;
+        }
+
+        .viz-container {
+            flex: 1;
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-height: 600px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        textarea {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            padding: 1rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            resize: vertical;
+            min-height: 80px;
+            transition: all 0.2s ease;
+        }
+
+        select {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            padding: 1rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            outline: none;
+        }
+
+        select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            flex: 1;
+        }
+
+        .loader {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--text-muted);
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .empty-state i {
+            display: block;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>BertViz</h1>
+        <p class="subtitle">Interactive Attention Visualization for Transformers.</p>
+    </header>
+
+    <main>
+        <div class="controls">
+            <form id="viz-form">
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label for="view_type">Visualization Type</label>
+                    <select id="view_type" name="view_type">
+                        <option value="model_view">Model View (Bird's Eye)</option>
+                        <option value="head_view">Head View (Attention Details)</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="sentence_a">Sentence A</label>
+                    <textarea id="sentence_a" name="sentence_a" placeholder="Enter first sentence..." required>The rabbit quickly hopped.</textarea>
+                </div>
+                
+                <div class="input-group" style="margin-top: 1rem;">
+                    <label for="sentence_b">Sentence B (Optional for cross-sentence attention)</label>
+                    <textarea id="sentence_b" name="sentence_b" placeholder="Enter second sentence..."></textarea>
+                </div>
+
+                <button type="submit" id="submit-btn">
+                    <span>Generate Visualization</span>
+                    <div class="loader" id="btn-loader"></div>
+                </button>
+            </form>
+        </div>
+
+        <div class="viz-container">
+            <div id="empty-state" class="empty-state">
+                <i>✨</i>
+                <p>Submit text to generate attention maps</p>
+            </div>
+            <iframe id="viz-frame" name="viz-frame"></iframe>
+        </div>
+    </main>
+
+    <script>
+        document.getElementById('viz-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('submit-btn');
+            const loader = document.getElementById('btn-loader');
+            const span = btn.querySelector('span');
+            const iframe = document.getElementById('viz-frame');
+            const emptyState = document.getElementById('empty-state');
+            
+            // UI Loading state
+            btn.disabled = true;
+            span.textContent = 'Computing...';
+            loader.style.display = 'block';
+            emptyState.style.display = 'none';
+            
+            // Clean iframe
+            iframe.srcdoc = '';
+
+            const formData = new FormData(e.target);
+            
+            try {
+                const response = await fetch('/visualize', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const html = await response.text();
+                
+                // Inject Bertviz HTML into the iframe to execute its logic safely
+                iframe.srcdoc = `
+                    <html>
+                    <head>
+                        <style>
+                            body { margin: 0; color: #f8fafc; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+                            select { background: #1e293b; color: white; border: 1px solid #3b82f6; border-radius: 4px; padding: 4px; }
+                        </style>
+                    </head>
+                    <body>${html}</body>
+                    </html>
+                `;
+            } catch (err) {
+                iframe.srcdoc = `<body style="color:red;">Error: ${err.message}</body>`;
+            } finally {
+                btn.disabled = false;
+                span.textContent = 'Generate Visualization';
+                loader.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
