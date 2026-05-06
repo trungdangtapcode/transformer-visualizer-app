@@ -48,7 +48,7 @@
 	import { fetchAndMergeChunks } from '~/utils/fetchChunks';
 	import WeightPopovers from '~/components/WeightPopovers.svelte';
 	import { fade } from 'svelte/transition';
-	import { AutoTokenizer } from '@xenova/transformers';
+	import { AutoTokenizer, env as xenovaEnv } from '@xenova/transformers';
 	import { ex0, ex1, ex2, ex3, ex4 } from '~/constants/examples';
 	import BlockTransition from '~/components/BlockTransition.svelte';
 	import QKV from '~/components/QKV.svelte';
@@ -56,6 +56,11 @@
 
 	ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.23.0/dist/';
 	ort.env.logLevel = 'error';
+
+	// Force @xenova/transformers to fetch from HuggingFace CDN only.
+	// Vite pre-bundling breaks its browser detection, causing it to try local
+	// file paths which Vite serves as index.html (HTML instead of JSON).
+	xenovaEnv.allowLocalModels = false;
 
 	// ─── Layout state ───────────────────────────────────────────
 	let topBarHeight = 0;
