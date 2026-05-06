@@ -64,4 +64,4 @@ Thumbs.db
 # Version control metadata
 # ==========================
 .svn/
-transformer-explainer/
+transformer-explainer/frontend/src/svelte/utils/model/
