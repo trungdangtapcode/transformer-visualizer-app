@@ -138,7 +138,7 @@
 </script>
 
 <div class="input-area" data-click="input-area">
-	<form class="input-form" data-click="input-form">
+	<form class="input-form" data-click="input-form" on:submit|preventDefault>
 		<ButtonGroup class="input-btn-group" size="sm">
 			<button
 				data-click="dropdown-btn"

@@ -538,6 +538,11 @@
 
 	const drawPath = async () => {
 		await tick();
+		// Wait for the browser to paint so getBoundingClientRect returns real dimensions.
+		// In Svelte 5 within a React mount, tick() alone isn't enough — elements may not
+		// be laid out yet when the reactive effect runs.
+		await new Promise((r) => requestAnimationFrame(r));
+		if (!svgEl || !svgBackEl) return;
 		const svg = d3.select(svgEl);
 		const svgBack = d3.select(svgBackEl);
 
@@ -671,11 +676,14 @@
 		}
 	}
 
-	const drawResidualPath = () => {
+	const drawResidualPath = async () => {
+		await new Promise((r) => requestAnimationFrame(r));
+		if (!svgEl) return;
 		const svg = d3.select(svgEl);
 
 		const starts = d3.selectAll(`.residual-start path.head`).nodes();
 		const ends = d3.selectAll(`.residual-end path.head`).nodes();
+		if (!starts.length || !ends.length) return;
 
 		const lineData = starts.map((start, i) => {
 			const startEl = start.getBoundingClientRect();
