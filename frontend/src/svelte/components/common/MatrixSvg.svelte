@@ -64,13 +64,17 @@
 
 		if (!!onSvgOut) svg.on('mouseleave', onSvgOut);
 
+		// Unwrap Svelte 5 proxy — D3's .data() doesn't handle proxied arrays
+		// correctly (reads wrong length). Deep-clone to plain arrays.
+		const plainData: (number | null)[][] = data.map((row: any) => [...row]);
+
 		let cells;
 
 		if (groupBy === 'col') {
 			let cols;
 			cols = svg
 				.selectAll('g.g-col')
-				.data(data)
+				.data(plainData)
 				.join('g')
 				.attr('class', (d, i) => `g-col g-col-${i} col-${i}`);
 			cols.attr('transform', (d, i) => `translate(${i * cellWidth + i * colGap},0)`);
@@ -126,7 +130,7 @@
 
 			rows = svg
 				.selectAll('g.g-row')
-				.data(data)
+				.data(plainData)
 				.join('g')
 				.attr('class', (d, i) => `g-row g-row-${i} row-${i}`);
 
@@ -208,7 +212,7 @@
 	};
 
 	$: if (data && svgEl) {
-		drawMatrixSvg(data);
+		drawMatrixSvg();
 	}
 
 	// highlighting
