@@ -546,13 +546,28 @@
 
 	const drawPath = async () => {
 		await tick();
-		// Wait for the browser to paint so getBoundingClientRect returns real dimensions.
-		// In Svelte 5 within a React mount, tick() alone isn't enough — elements may not
-		// be laid out yet when the reactive effect runs.
 		await new Promise((r) => requestAnimationFrame(r));
-		if (!svgEl || !svgBackEl) return;
+		if (!svgEl || !svgBackEl) {
+			console.warn('[Sankey] drawPath skipped: svgEl or svgBackEl not ready');
+			return;
+		}
 		const svg = d3.select(svgEl);
 		const svgBack = d3.select(svgBackEl);
+
+		// Debug: log how many source/target elements each path group finds
+		const debugFirst = !drawPath._logged;
+		if (debugFirst) {
+			drawPath._logged = true;
+			Object.keys(pathMap).forEach((key) => {
+				pathMap[key].forEach((item) => {
+					const sources = d3.selectAll(item.from).nodes();
+					const targets = d3.selectAll(item.to).nodes();
+					if (sources.length === 0 || targets.length === 0) {
+						console.warn(`[Sankey] "${key}": from="${item.from}" (${sources.length}) to="${item.to}" (${targets.length})`);
+					}
+				});
+			});
+		}
 
 		[
 			{ dataMap: pathMap, svg },
