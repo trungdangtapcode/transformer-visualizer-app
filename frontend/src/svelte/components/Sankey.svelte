@@ -492,47 +492,55 @@
 		const defs = svg.append('defs');
 
 		Object.keys(gradientMap).forEach((key) => {
-			const stops = gradientMap[key];
-			const grad = defs
-				.append('linearGradient')
-				.attr('id', key)
-				.attr('class', key)
-				.attr('x1', '0%')
-				.attr('y1', '0%')
-				.attr('x2', '100%')
-				.attr('y2', '0%');
+			try {
+				const stops = gradientMap[key];
+				const grad = defs
+					.append('linearGradient')
+					.attr('id', key)
+					.attr('class', key)
+					.attr('x1', '0%')
+					.attr('y1', '0%')
+					.attr('x2', '100%')
+					.attr('y2', '0%');
 
-			const gradClone = defs
-				.append('linearGradient')
-				.attr('id', key + '-last')
-				.attr('class', key)
-				.attr('x1', '0%')
-				.attr('y1', '0%')
-				.attr('x2', '100%')
-				.attr('y2', '0%');
+				const gradClone = defs
+					.append('linearGradient')
+					.attr('id', key + '-last')
+					.attr('class', key)
+					.attr('x1', '0%')
+					.attr('y1', '0%')
+					.attr('x2', '100%')
+					.attr('y2', '0%');
 
-			Object.keys(stops).forEach((stop) => {
-				let color, opacity;
-				if (typeof stops[stop] !== 'string') {
-					color = stops[stop].color;
-					opacity = stops[stop].opacity;
-				} else {
-					color = stops[stop];
-					opacity = 1;
-				}
+				Object.keys(stops).forEach((stop) => {
+					let color, opacity;
+					const val = stops[stop];
+					if (val == null) {
+						color = '#cccccc';
+						opacity = 1;
+					} else if (typeof val !== 'string') {
+						color = val.color || '#cccccc';
+						opacity = val.opacity ?? 1;
+					} else {
+						color = val;
+						opacity = 1;
+					}
 
-				grad
-					.append('stop')
-					.attr('offset', `${stop}%`)
-					.attr('stop-color', color)
-					.attr('stop-opacity', opacity);
+					grad
+						.append('stop')
+						.attr('offset', `${stop}%`)
+						.attr('stop-color', color)
+						.attr('stop-opacity', opacity);
 
-				gradClone
-					.append('stop')
-					.attr('offset', `${stop}%`)
-					.attr('stop-color', color)
-					.attr('stop-opacity', opacity);
-			});
+					gradClone
+						.append('stop')
+						.attr('offset', `${stop}%`)
+						.attr('stop-color', color)
+						.attr('stop-opacity', opacity);
+				});
+			} catch (e) {
+				console.warn(`[Sankey] Failed to create gradient "${key}":`, e);
+			}
 		});
 	};
 
@@ -664,14 +672,16 @@
 		});
 
 		// Initial draw — in Svelte 5 the $: reactive statement may fire before
-		// svgEl is bound, exit early, and never retry. Draw explicitly after mount
-		// with enough delay for the browser to complete layout.
-		requestAnimationFrame(() => {
-			requestAnimationFrame(() => {
-				drawPath();
-				drawResidualPath();
-			});
-		});
+		// svgEl is bound, exit early, and never retry. Draw explicitly after mount.
+		// Use setTimeout to ensure all sibling components are rendered and laid out.
+		const initialDraw = () => {
+			drawPath();
+			drawResidualPath();
+		};
+		// Draw at multiple intervals to handle varying load times
+		setTimeout(initialDraw, 100);
+		setTimeout(initialDraw, 500);
+		setTimeout(initialDraw, 1500);
 
 		return () => {
 			resizeObserver.disconnect();
