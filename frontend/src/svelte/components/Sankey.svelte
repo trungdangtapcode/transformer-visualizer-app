@@ -547,27 +547,9 @@
 	const drawPath = async () => {
 		await tick();
 		await new Promise((r) => requestAnimationFrame(r));
-		if (!svgEl || !svgBackEl) {
-			console.warn('[Sankey] drawPath skipped: svgEl or svgBackEl not ready');
-			return;
-		}
+		if (!svgEl || !svgBackEl) return;
 		const svg = d3.select(svgEl);
 		const svgBack = d3.select(svgBackEl);
-
-		// Debug: log how many source/target elements each path group finds
-		const debugFirst = !drawPath._logged;
-		if (debugFirst) {
-			drawPath._logged = true;
-			Object.keys(pathMap).forEach((key) => {
-				pathMap[key].forEach((item) => {
-					const sources = d3.selectAll(item.from).nodes();
-					const targets = d3.selectAll(item.to).nodes();
-					if (sources.length === 0 || targets.length === 0) {
-						console.warn(`[Sankey] "${key}": from="${item.from}" (${sources.length}) to="${item.to}" (${targets.length})`);
-					}
-				});
-			});
-		}
 
 		[
 			{ dataMap: pathMap, svg },
@@ -686,17 +668,21 @@
 			drawPath();
 		});
 
-		// Initial draw — in Svelte 5 the $: reactive statement may fire before
-		// svgEl is bound, exit early, and never retry. Draw explicitly after mount.
-		// Use setTimeout to ensure all sibling components are rendered and laid out.
-		const initialDraw = () => {
+		// Initial draw with retry — in Svelte 5, sibling components' D3 rendering
+		// (MatrixSvg) may not be done when Sankey first tries to draw. Retry until
+		// the D3-rendered target elements (g.g-row-0 rect) actually exist in the DOM.
+		let retryCount = 0;
+		const maxRetries = 20;
+		const retryDraw = () => {
+			const hasTargets = document.querySelector('.attention-matrix .main g.g-row-0 rect');
 			drawPath();
 			drawResidualPath();
+			retryCount++;
+			if (!hasTargets && retryCount < maxRetries) {
+				setTimeout(retryDraw, 200);
+			}
 		};
-		// Draw at multiple intervals to handle varying load times
-		setTimeout(initialDraw, 100);
-		setTimeout(initialDraw, 500);
-		setTimeout(initialDraw, 1500);
+		setTimeout(retryDraw, 100);
 
 		return () => {
 			resizeObserver.disconnect();
