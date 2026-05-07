@@ -656,11 +656,21 @@
 
 		const transition = document?.querySelector('.transition-watch');
 
-		resizeObserver.observe(transition);
+		if (transition) resizeObserver.observe(transition);
 
 		// redraw when data updated
 		const unsubscribeAttnIdx = attentionHeadIdx.subscribe(async (newIdx) => {
 			drawPath();
+		});
+
+		// Initial draw — in Svelte 5 the $: reactive statement may fire before
+		// svgEl is bound, exit early, and never retry. Draw explicitly after mount
+		// with enough delay for the browser to complete layout.
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				drawPath();
+				drawResidualPath();
+			});
 		});
 
 		return () => {
