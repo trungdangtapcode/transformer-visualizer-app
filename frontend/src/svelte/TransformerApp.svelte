@@ -57,10 +57,13 @@
 	ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.23.0/dist/';
 	ort.env.logLevel = 'error';
 
-	// Force @xenova/transformers to fetch from HuggingFace CDN only.
-	// Vite pre-bundling breaks its browser detection, causing it to try local
-	// file paths which Vite serves as index.html (HTML instead of JSON).
+	// Force @xenova/transformers to use remote HuggingFace CDN only.
+	// Vite pre-bundling breaks its Node-vs-browser detection, causing it to
+	// try local file paths which Vite serves as index.html (HTML instead of JSON).
 	xenovaEnv.allowLocalModels = false;
+	xenovaEnv.useBrowserCache = false;
+	xenovaEnv.remoteHost = 'https://huggingface.co/';
+	xenovaEnv.remotePathTemplate = '{model}/resolve/{revision}/';
 
 	// ─── Layout state ───────────────────────────────────────────
 	let topBarHeight = 0;
@@ -104,7 +107,9 @@
 
 		// Page: init tokenizer and model
 		const initPage = async () => {
-			const gpt2Tokenizer = await AutoTokenizer.from_pretrained('NlpHUST/gpt2-vietnamese');
+			const gpt2Tokenizer = await AutoTokenizer.from_pretrained('NlpHUST/gpt2-vietnamese', {
+				local_files_only: false,
+			});
 			active = true;
 			const unsubscribe = subscribeInputs(gpt2Tokenizer);
 			if (!$isMobile) {

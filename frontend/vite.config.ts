@@ -27,12 +27,6 @@ export default defineConfig({
       },
     },
   },
-  optimizeDeps: {
-    // @xenova/transformers must NOT be pre-bundled — Vite's bundling rewrites
-    // its environment detection (Node vs browser), causing it to construct
-    // wrong fetch URLs for HuggingFace model files.
-    exclude: ['@xenova/transformers'],
-  },
   server: {
     proxy: {
       // Use /api/visualize specifically — NOT /api broadly.
