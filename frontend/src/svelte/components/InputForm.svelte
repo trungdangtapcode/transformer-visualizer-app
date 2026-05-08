@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { Dropdown, DropdownItem, ButtonGroup } from 'flowbite-svelte';
 	import Temperature from './Temperature.svelte';
 
@@ -33,25 +34,21 @@
 
 	let useCustomInput = false;
 
-	// In Svelte 5, $: creates read-only derived values. These variables need
-	// to be BOTH reactive (sync from store) AND mutable (set by user input).
-	// Use plain let + manual store subscription instead of $: declarations.
-	let inputTextTemp = '';
-	let predictedTokenTemp = '';
+	// In Svelte 5, $: compiles to $derived (read-only). These variables need
+	// to be BOTH reactive AND manually mutable. Use onMount subscription.
+	let inputTextTemp = $inputText || '';
+	let predictedTokenTemp = $predictedToken?.token || '';
 
-	// Sync from stores — but only when store changes, not when user edits
-	let _lastInputText = '';
-	$: {
-		const storeVal = $inputText || '';
-		if (storeVal !== _lastInputText) {
-			_lastInputText = storeVal;
-			inputTextTemp = storeVal;
-		}
-	}
-	$: {
-		const storeVal = $predictedToken?.token || '';
-		predictedTokenTemp = storeVal;
-	}
+	onMount(() => {
+		const unsub1 = inputText.subscribe((val) => {
+			inputTextTemp = val || '';
+			if (inputRef) inputRef.innerText = inputTextTemp;
+		});
+		const unsub2 = predictedToken.subscribe((val) => {
+			predictedTokenTemp = val?.token || '';
+		});
+		return () => { unsub1(); unsub2(); };
+	});
 
 	const wordLimit = 12;
 	$: exceedLimit = inputTextTemp.split(' ').length >= wordLimit;
@@ -61,7 +58,6 @@
 		let formattedString = (inputTextTemp + predictedTokenTemp).replace(/[\s\n]+/g, ' ');
 
 		inputTextTemp = formattedString;
-		_lastInputText = formattedString;
 
 		// set predicted to empty
 		predictedTokenTemp = '';
@@ -71,7 +67,6 @@
 
 	const onInput = (e) => {
 		inputTextTemp = inputRef.innerText;
-		_lastInputText = inputTextTemp;
 	};
 
 	const handleSubmit = (e) => {
