@@ -43,6 +43,16 @@ npm install
 
 One install -- both React and Svelte dependencies live in the same `package.json`.
 
+## 4. GPT-2 ONNX Model (525 MB)
+
+The model chunks are too large for git. Copy them from the transformer-explainer directory:
+
+```bash
+cp -r transformer-explainer/static/model-v2 frontend/public/model-v2
+```
+
+This creates 53 files (`gpt2.onnx.part0` through `gpt2.onnx.part52`, ~10 MB each). The browser caches them after the first load via the Cache API.
+
 ## Verify
 
 ```bash
@@ -52,5 +62,19 @@ python -c "from bertviz import model_view; print('bertviz OK')"
 
 # Frontend
 cd frontend
-npm test    # should show 26 passing tests
+npm test    # should show 30 passing tests
+
+# Model chunks
+ls frontend/public/model-v2/ | wc -l   # should show 53
 ```
+
+## Run
+
+```bash
+./start.sh
+# Or manually:
+# Terminal 1: source venv/bin/activate && python -m uvicorn app:app --host 0.0.0.0 --port 8000
+# Terminal 2: cd frontend && npm run dev -- --host 0.0.0.0
+```
+
+Open **http://localhost:5173** (or `http://<VM-IP>:5173` if remote).
