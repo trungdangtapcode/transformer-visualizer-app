@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { Dropdown, DropdownItem, ButtonGroup } from 'flowbite-svelte';
 	import Temperature from './Temperature.svelte';
 
@@ -34,31 +33,12 @@
 
 	let useCustomInput = false;
 
-	// Plain variables — NO $: (Svelte 5 makes $: read-only, breaks manual mutation).
-	let inputTextTemp = '';
-	let predictedTokenTemp = '';
-	let _predictedCleared = false;
+	$: inputTextTemp = $inputText || '';
 
-	onMount(() => {
-		inputTextTemp = $inputText || '';
-
-		// Sync predicted token from store, but respect manual clears
-		const unsub = predictedToken.subscribe((val) => {
-			if (_predictedCleared) {
-				// Was cleared by onFocusInput — only update when a NEW prediction arrives
-				if (val?.token && val.token !== '') {
-					predictedTokenTemp = val.token;
-					_predictedCleared = false;
-				}
-			} else {
-				predictedTokenTemp = val?.token || '';
-			}
-		});
-		return unsub;
-	});
+	$: predictedTokenTemp = $predictedToken?.token || '';
 
 	const wordLimit = 12;
-	$: exceedLimit = (inputTextTemp || '').split(' ').length >= wordLimit;
+	$: exceedLimit = inputTextTemp.split(' ').length >= wordLimit;
 
 	// Text input
 	const onFocusInput = (e) => {
@@ -68,9 +48,8 @@
 
 		// set predicted to empty
 		predictedTokenTemp = '';
-		_predictedCleared = true;
 		// set input box text
-		if (inputRef) inputRef.innerText = inputTextTemp;
+		inputRef.innerText = inputTextTemp;
 	};
 
 	const onInput = (e) => {
@@ -295,8 +274,8 @@
 		flex: 1 0 0;
 		align-items: center;
 
-		border: 1px solid var(--color-gray-300);
-		color: var(--color-gray-900);
+		border: 1px solid theme('colors.gray.300');
+		color: theme('colors.gray.900');
 		border-left: none;
 		border-start-end-radius: 0.5rem;
 		border-end-end-radius: 0.5rem;
@@ -349,10 +328,10 @@
 	.select-button {
 		flex-shrink: 0;
 		font-size: 0.9rem;
-		border: 1px solid var(--color-gray-300);
-		color: var(--color-gray-900);
+		border: 1px solid theme('colors.gray.300');
+		color: theme('colors.gray.900');
 		&:hover {
-			background-color: var(--color-gray-100);
+			background-color: theme('colors.gray.100');
 		}
 		&:focus {
 			outline: none;
@@ -363,7 +342,7 @@
 	}
 	:global(.example-dropdown) {
 		:global(.active) {
-			background-color: var(--color-gray-100) !important;
+			background-color: theme('colors.gray.100') !important;
 		}
 	}
 	.helper-text {
@@ -372,13 +351,13 @@
 		right: 0;
 		padding: 0.3rem 0;
 		transform: translate(0, 100%);
-		color: var(--color-gray-400);
+		color: theme('colors.gray.400');
 		font-size: 0.9rem;
 	}
 	:global(.generate-button) {
 		padding: 0.4rem 0.8rem;
-		border: 1px solid var(--color-gray-300);
-		color: var(--color-gray-900);
+		border: 1px solid theme('colors.gray.300');
+		color: theme('colors.gray.900');
 		transition: all 0.2s;
 		flex-shrink: 0;
 	}
@@ -390,8 +369,8 @@
 	}
 	:global(.generate-button.disabled) {
 		opacity: 1;
-		background-color: var(--color-gray-100);
-		color: var(--color-gray-400);
+		background-color: theme('colors.gray.100');
+		color: theme('colors.gray.400');
 		cursor: not-allowed;
 	}
 
