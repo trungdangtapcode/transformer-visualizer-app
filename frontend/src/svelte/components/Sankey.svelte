@@ -557,6 +557,24 @@
 		await new Promise((r) => requestAnimationFrame(r));
 		if (!svgEl || !svgBackEl) return;
 
+		const _svgR = svgEl.getBoundingClientRect();
+		const _off = getSvgOffset();
+		const _firstSrc = document.querySelector('.embedding .column .vector');
+		const _firstSrcR = _firstSrc?.getBoundingClientRect();
+		const _pathKeys = Object.keys(pathMap);
+		const _firstFrom = pathMap[_pathKeys[0]]?.[0]?.from;
+		const _firstFromNodes = _firstFrom ? d3.selectAll('' + _firstFrom).size() : 0;
+		console.log('[SANKEY DEBUG]', JSON.stringify({
+			svgSize: `${_svgR.width}x${_svgR.height}`,
+			svgTop: _svgR.top,
+			offset: _off,
+			pathMapKeys: _pathKeys,
+			firstFrom: _firstFrom,
+			firstFromCount: _firstFromNodes,
+			firstSrc: _firstSrcR ? `${_firstSrcR.width}x${_firstSrcR.height}@${_firstSrcR.top}` : 'null',
+			gradientCount: svgEl.querySelectorAll('linearGradient').length,
+		}));
+
 		const svg = d3.select(svgEl);
 		const svgBack = d3.select(svgBackEl);
 
