@@ -64,9 +64,20 @@
 
 		if (!!onSvgOut) svg.on('mouseleave', onSvgOut);
 
-		// Unwrap Svelte 5 proxy — D3's .data() doesn't handle proxied arrays
-		// correctly (reads wrong length). Deep-clone to plain arrays.
-		const plainData: (number | null)[][] = data.map((row: any) => [...row]);
+		// Unwrap Svelte 5 deep proxy — D3's .data() doesn't handle proxied arrays.
+		// Array.from with explicit index access bypasses proxy iteration quirks.
+		const len = data.length;
+		const plainData: (number | null)[][] = [];
+		for (let i = 0; i < len; i++) {
+			const row = data[i];
+			const plainRow: (number | null)[] = [];
+			const rLen = row?.length || 0;
+			for (let j = 0; j < rLen; j++) {
+				plainRow.push(row[j]);
+			}
+			plainData.push(plainRow);
+		}
+		console.log('[MatrixSvg] data.length:', len, 'plainData.length:', plainData.length, 'cols:', plainData[0]?.length);
 
 		let cells;
 
