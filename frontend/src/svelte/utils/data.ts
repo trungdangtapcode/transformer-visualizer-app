@@ -73,10 +73,13 @@ export const runModel = async ({
 
 	// To ensure the animation starts after all elements have been rendered
 	setTimeout(async () => {
-		await showFlowAnimation(input_tokens.length, isOneTokenAdded);
+		try {
+			await showFlowAnimation(input_tokens.length, isOneTokenAdded);
+		} catch (e) {
+			// Animation may fail in Svelte 5 — don't block the UI
+		}
 
 		predictedToken.set(sampled);
-		// setPredictedTokenForAnimation(probabilities, sampled, sampling);
 
 		isModelRunning.set(false);
 	}, 0);

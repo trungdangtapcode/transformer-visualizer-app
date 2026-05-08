@@ -232,6 +232,16 @@
 				</div>
 				{#if $isModelRunning}
 					<div class="loading"><LoadingDots /></div>
+					<button
+						type="button"
+						class="clear-predicted"
+						title="Cancel"
+						on:click|stopPropagation={() => {
+							isModelRunning.set(false);
+						}}
+					>
+						✕
+					</button>
 				{/if}
 				{#if $isMobile}
 					<span class="helper-text"
