@@ -1,6 +1,22 @@
 const CACHE_PREFIX = 'onnx-model-cache';
 const CACHE_NAME = `${CACHE_PREFIX}-v2`;
 
+// Fetch a batch of URLs concurrently
+async function fetchBatch(urls, cache) {
+	return Promise.all(
+		urls.map(({ url, index }) =>
+			fetch(url).then((response) => {
+				if (response.ok) {
+					cache.put(url, response.clone());
+					return { index, buffer: response.arrayBuffer() };
+				} else {
+					throw new Error(`Failed to fetch ${url}`);
+				}
+			})
+		)
+	);
+}
+
 async function fetchModelChunks(chunkUrls) {
 	await clearOldCaches();
 
@@ -8,26 +24,29 @@ async function fetchModelChunks(chunkUrls) {
 	const cache = await caches.open(CACHE_NAME);
 	const cachedResponses = await Promise.all(chunkUrls.map((url) => cache.match(url)));
 
-	// add cache
-	const fetchPromises = chunkUrls.map((url, index) => {
-		if (!cachedResponses[index]) {
-			// console.log(`Fetching and caching: ${url}`);
-			return fetch(url).then((response) => {
-				if (response.ok) {
-					cache.put(url, response.clone());
-					return response.arrayBuffer();
-				} else {
-					throw new Error(`Failed to fetch ${url}`);
-				}
-			});
-		} else {
-			hasCache = true;
-			// console.log(`Using cached version: ${url}`);
-			return cachedResponses[index].arrayBuffer();
-		}
-	});
+	const modelBuffers = new Array(chunkUrls.length);
+	const uncached = [];
 
-	const modelBuffers = await Promise.all(fetchPromises);
+	// Separate cached vs uncached
+	for (let i = 0; i < chunkUrls.length; i++) {
+		if (cachedResponses[i]) {
+			hasCache = true;
+			modelBuffers[i] = await cachedResponses[i].arrayBuffer();
+		} else {
+			uncached.push({ url: chunkUrls[i], index: i });
+		}
+	}
+
+	// Fetch uncached chunks in batches of 6 to avoid overwhelming the browser
+	const BATCH_SIZE = 6;
+	for (let i = 0; i < uncached.length; i += BATCH_SIZE) {
+		const batch = uncached.slice(i, i + BATCH_SIZE);
+		const results = await fetchBatch(batch, cache);
+		for (const { index, buffer } of results) {
+			modelBuffers[index] = await buffer;
+		}
+	}
+
 	return { hasCache, modelBuffers };
 }
 
