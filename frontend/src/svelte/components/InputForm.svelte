@@ -34,24 +34,31 @@
 
 	let useCustomInput = false;
 
-	// In Svelte 5, $: compiles to $derived (read-only). These variables need
-	// to be BOTH reactive AND manually mutable. Use onMount subscription.
-	let inputTextTemp = $inputText || '';
-	let predictedTokenTemp = $predictedToken?.token || '';
+	// Plain variables — NO $: (Svelte 5 makes $: read-only, breaks manual mutation).
+	let inputTextTemp = '';
+	let predictedTokenTemp = '';
+	let _predictedCleared = false;
 
 	onMount(() => {
-		const unsub1 = inputText.subscribe((val) => {
-			inputTextTemp = val || '';
-			if (inputRef) inputRef.innerText = inputTextTemp;
+		inputTextTemp = $inputText || '';
+
+		// Sync predicted token from store, but respect manual clears
+		const unsub = predictedToken.subscribe((val) => {
+			if (_predictedCleared) {
+				// Was cleared by onFocusInput — only update when a NEW prediction arrives
+				if (val?.token && val.token !== '') {
+					predictedTokenTemp = val.token;
+					_predictedCleared = false;
+				}
+			} else {
+				predictedTokenTemp = val?.token || '';
+			}
 		});
-		const unsub2 = predictedToken.subscribe((val) => {
-			predictedTokenTemp = val?.token || '';
-		});
-		return () => { unsub1(); unsub2(); };
+		return unsub;
 	});
 
 	const wordLimit = 12;
-	$: exceedLimit = inputTextTemp.split(' ').length >= wordLimit;
+	$: exceedLimit = (inputTextTemp || '').split(' ').length >= wordLimit;
 
 	// Text input
 	const onFocusInput = (e) => {
@@ -61,8 +68,9 @@
 
 		// set predicted to empty
 		predictedTokenTemp = '';
+		_predictedCleared = true;
 		// set input box text
-		inputRef.innerText = inputTextTemp;
+		if (inputRef) inputRef.innerText = inputTextTemp;
 	};
 
 	const onInput = (e) => {
