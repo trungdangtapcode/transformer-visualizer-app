@@ -167,7 +167,7 @@
 	// ─── Page: subscribe to input changes ───────────────────────
 	const cachedDataMap = [ex0, ex1, ex2, ex3, ex4];
 	const subscribeInputs = (tokenizer: PreTrainedTokenizer) => {
-		const runModelOrCache = () => {
+		const runModelOrCache = (currentInput?: string) => {
 			if ($isFetchingModel || !$modelSession) {
 				const cachedData = cachedDataMap[$selectedExampleIdx];
 				fakeRunWithCachedData({
@@ -178,16 +178,18 @@
 				});
 				return;
 			}
+			// Use the passed value directly — $inputText is stale in Svelte 5
+			const input = currentInput ?? $inputText;
 			runModel({
 				tokenizer,
-				input: $inputText.trim(),
+				input: input.trim(),
 				temperature: $temperature,
 				sampling: $sampling
 			});
 		};
 
-		const unsubscribeInputText = inputText.subscribe(() => {
-			runModelOrCache();
+		const unsubscribeInputText = inputText.subscribe((value) => {
+			runModelOrCache(value);
 		});
 
 		let initialTemperature = true;
