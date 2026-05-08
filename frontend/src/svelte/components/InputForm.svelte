@@ -32,9 +32,21 @@
 	let predictRef: HTMLDivElement;
 
 	let useCustomInput = false;
-
 	$: inputTextTemp = $inputText || '';
+
 	$: predictedTokenTemp = $predictedToken?.token || '';
+
+	// Local flag to hide the predicted token without modifying the store.
+	// Reset to false whenever a new prediction comes in.
+	let predictedCleared = false;
+	let _lastPredicted = '';
+	$: {
+		const newPredicted = $predictedToken?.token || '';
+		if (newPredicted !== _lastPredicted) {
+			_lastPredicted = newPredicted;
+			predictedCleared = false;
+		}
+	}
 
 	const wordLimit = 12;
 	$: exceedLimit = inputTextTemp.split(' ').length >= wordLimit;
@@ -50,14 +62,18 @@
 		completeCurrentAnimation();
 
 		setTimeout(() => {
-			// Read what's actually in the text box, not the stale store
+			// Read what's actually in the text box, not the stale store.
+			// Skip predicted token if user clicked the ✕ to clear it.
 			const currentText = inputRef ? inputRef.innerText.trim() : '';
-			const predicted = $predictedToken?.token || '';
+			const predicted = predictedCleared ? '' : ($predictedToken?.token || '');
 			const text = (currentText + predicted).replace(/[\s\n]+/g, ' ');
 			if (inputRef) inputRef.innerText = text;
+			predictedCleared = false;
 
 			textPages.find((page) => page.id === 'how-transformers-work')?.complete();
 
+			// Force re-run by setting to empty first if same value (writable skips no-op sets)
+			inputText.update((prev) => prev === text ? text + ' ' : text);
 			inputText.set(text);
 
 			window.dataLayer?.push({
@@ -185,7 +201,7 @@
 					>
 					{inputTextTemp}
 				</div>
-				{#if !$isModelRunning}
+				{#if !$isModelRunning && !predictedCleared}
 					<div
 						bind:this={predictRef}
 						class="predicted"
@@ -205,8 +221,8 @@
 							class="clear-predicted"
 							title="Clear predicted token"
 							on:click|stopPropagation={() => {
-								// Clear the predicted token from the store
-								predictedToken.set({ token: '', probability: 0, rank: 0 } as any);
+								// Just hide the predicted token visually — don't touch the store
+								predictedCleared = true;
 							}}
 						>
 							✕
