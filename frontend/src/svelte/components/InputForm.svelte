@@ -33,25 +33,27 @@
 
 	let useCustomInput = false;
 
-	$: inputTextTemp = $inputText || '';
+	// When a token is predicted, immediately merge it into inputText store.
+	// No separate predictedTokenTemp — treat predicted as part of input.
+	let predictedTokenTemp = '';
+	$: {
+		const newPredicted = $predictedToken?.token || '';
+		if (newPredicted && newPredicted !== predictedTokenTemp) {
+			predictedTokenTemp = newPredicted;
+			// Merge predicted token into input store immediately
+			const merged = (($inputText || '') + newPredicted).replace(/[\s\n]+/g, ' ');
+			inputText.set(merged);
+		}
+	}
 
-	$: predictedTokenTemp = $predictedToken?.token || '';
+	$: inputTextTemp = $inputText || '';
 
 	const wordLimit = 12;
 	$: exceedLimit = inputTextTemp.split(' ').length >= wordLimit;
 
-	// Text input
 	const onFocusInput = (e) => {
-		// Read current values directly from stores to avoid Svelte 5 $: stale values
-		const currentInput = $inputText || '';
-		const currentPredicted = $predictedToken?.token || '';
-		let formattedString = (currentInput + currentPredicted).replace(/[\s\n]+/g, ' ');
-
-		inputTextTemp = formattedString;
-
-		// set predicted to empty
+		inputTextTemp = $inputText || '';
 		predictedTokenTemp = '';
-		// set input box text
 		if (inputRef) inputRef.innerText = inputTextTemp;
 	};
 
@@ -60,20 +62,13 @@
 	};
 
 	const handleSubmit = (e) => {
-		// Complete any running animation before starting new generation
 		completeCurrentAnimation();
 
 		setTimeout(() => {
-			// Read stores directly, merge predicted token into input
-			const currentInput = $inputText || '';
-			const currentPredicted = $predictedToken?.token || '';
-			const merged = (currentInput + currentPredicted).replace(/[\s\n]+/g, ' ');
-			inputTextTemp = merged;
-			if (inputRef) inputRef.innerText = merged;
-
 			textPages.find((page) => page.id === 'how-transformers-work')?.complete();
 
-			inputText.set(merged);
+			// Input already contains predicted token — just set it
+			inputText.set(inputTextTemp);
 
 			window.dataLayer?.push({
 				event: 'generate-next-token',
@@ -198,23 +193,8 @@
 						}}
 						role="input"
 					>
-						{inputTextTemp}
-					</div>
-					{#if !$isModelRunning}
-						<div
-							bind:this={predictRef}
-							class="predicted"
-							role="none"
-							on:click={(e) => {
-								e.stopPropagation();
-								onFocusInput(e);
-								inputRef.focus();
-								moveCursorToEnd(inputRef);
-							}}
-						>
-							<span>{predictedTokenTemp}</span>
-						</div>
-					{/if}
+					{inputTextTemp}
+				</div>
 				</div>
 				{#if $isModelRunning}
 					<div class="loading"><LoadingDots /></div>
