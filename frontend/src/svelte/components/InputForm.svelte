@@ -42,14 +42,17 @@
 
 	// Text input
 	const onFocusInput = (e) => {
-		let formattedString = (inputTextTemp + predictedTokenTemp).replace(/[\s\n]+/g, ' ');
+		// Read current values directly from stores to avoid Svelte 5 $: stale values
+		const currentInput = $inputText || '';
+		const currentPredicted = $predictedToken?.token || '';
+		let formattedString = (currentInput + currentPredicted).replace(/[\s\n]+/g, ' ');
 
 		inputTextTemp = formattedString;
 
 		// set predicted to empty
 		predictedTokenTemp = '';
 		// set input box text
-		inputRef.innerText = inputTextTemp;
+		if (inputRef) inputRef.innerText = inputTextTemp;
 	};
 
 	const onInput = (e) => {
@@ -61,10 +64,16 @@
 		completeCurrentAnimation();
 
 		setTimeout(() => {
-			onFocusInput();
+			// Read stores directly, merge predicted token into input
+			const currentInput = $inputText || '';
+			const currentPredicted = $predictedToken?.token || '';
+			const merged = (currentInput + currentPredicted).replace(/[\s\n]+/g, ' ');
+			inputTextTemp = merged;
+			if (inputRef) inputRef.innerText = merged;
+
 			textPages.find((page) => page.id === 'how-transformers-work')?.complete();
 
-			inputText.set(inputTextTemp);
+			inputText.set(merged);
 
 			window.dataLayer?.push({
 				event: 'generate-next-token',
