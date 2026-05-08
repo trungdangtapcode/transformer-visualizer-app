@@ -28,6 +28,10 @@ export default defineConfig({
     },
   },
   server: {
+    // Allow serving symlinked files from outside the project root
+    fs: {
+      allow: ['..'],
+    },
     proxy: {
       // Use /api/visualize specifically — NOT /api broadly.
       // HuggingFace CDN redirects tokenizer fetches to /api/resolve-cache/...
