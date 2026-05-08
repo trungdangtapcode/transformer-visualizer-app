@@ -199,6 +199,19 @@
 					>
 						<span>{predictedTokenTemp}</span>
 					</div>
+					{#if predictedTokenTemp && predictedTokenTemp.trim() !== ''}
+						<button
+							type="button"
+							class="clear-predicted"
+							title="Clear predicted token"
+							on:click|stopPropagation={() => {
+								// Clear the predicted token from the store
+								predictedToken.set({ token: '', probability: 0, rank: 0 } as any);
+							}}
+						>
+							✕
+						</button>
+					{/if}
 				{/if}
 				</div>
 				{#if $isModelRunning}
@@ -301,7 +314,6 @@
 				}
 			}
 			.predicted {
-				flex: 1 0 0;
 				color: var(--predicted-color);
 				font-weight: 600;
 				span {
@@ -316,6 +328,29 @@
 
 		.loading {
 			flex-shrink: 0;
+		}
+	}
+
+	.clear-predicted {
+		flex-shrink: 0;
+		margin-left: 0.4rem;
+		width: 1.25rem;
+		height: 1.25rem;
+		border-radius: 9999px;
+		border: 1px solid var(--color-gray-300);
+		background: var(--color-gray-50);
+		color: var(--color-gray-500);
+		font-size: 0.75rem;
+		line-height: 1;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition: all 0.15s;
+		&:hover {
+			background: var(--color-gray-200);
+			color: var(--color-gray-800);
+			border-color: var(--color-gray-400);
 		}
 	}
 
