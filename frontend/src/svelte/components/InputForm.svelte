@@ -50,8 +50,10 @@
 		completeCurrentAnimation();
 
 		setTimeout(() => {
-			// Merge predicted token into input, then submit
-			const text = (($inputText || '') + ($predictedToken?.token || '')).replace(/[\s\n]+/g, ' ');
+			// Read what's actually in the text box, not the stale store
+			const currentText = inputRef ? inputRef.innerText.trim() : '';
+			const predicted = $predictedToken?.token || '';
+			const text = (currentText + predicted).replace(/[\s\n]+/g, ' ');
 			if (inputRef) inputRef.innerText = text;
 
 			textPages.find((page) => page.id === 'how-transformers-work')?.complete();
