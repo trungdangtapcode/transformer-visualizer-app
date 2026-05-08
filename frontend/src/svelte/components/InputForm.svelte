@@ -33,9 +33,25 @@
 
 	let useCustomInput = false;
 
-	$: inputTextTemp = $inputText || '';
+	// In Svelte 5, $: creates read-only derived values. These variables need
+	// to be BOTH reactive (sync from store) AND mutable (set by user input).
+	// Use plain let + manual store subscription instead of $: declarations.
+	let inputTextTemp = '';
+	let predictedTokenTemp = '';
 
-	$: predictedTokenTemp = $predictedToken?.token || '';
+	// Sync from stores — but only when store changes, not when user edits
+	let _lastInputText = '';
+	$: {
+		const storeVal = $inputText || '';
+		if (storeVal !== _lastInputText) {
+			_lastInputText = storeVal;
+			inputTextTemp = storeVal;
+		}
+	}
+	$: {
+		const storeVal = $predictedToken?.token || '';
+		predictedTokenTemp = storeVal;
+	}
 
 	const wordLimit = 12;
 	$: exceedLimit = inputTextTemp.split(' ').length >= wordLimit;
@@ -45,6 +61,7 @@
 		let formattedString = (inputTextTemp + predictedTokenTemp).replace(/[\s\n]+/g, ' ');
 
 		inputTextTemp = formattedString;
+		_lastInputText = formattedString;
 
 		// set predicted to empty
 		predictedTokenTemp = '';
@@ -54,6 +71,7 @@
 
 	const onInput = (e) => {
 		inputTextTemp = inputRef.innerText;
+		_lastInputText = inputTextTemp;
 	};
 
 	const handleSubmit = (e) => {
