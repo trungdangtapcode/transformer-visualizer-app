@@ -257,7 +257,7 @@
 						<div class={classNames('dim-partial left', `${$expandedBlock.id || ''}`)} transition:fade={{ duration: 100 }}></div>
 						<div class={classNames('dim-partial right', `${$expandedBlock.id || ''}`)} transition:fade={{ duration: 100 }}></div>
 					{/if}
-					<div class="sankey opacity-1" class:attention={$expandedBlock.id === 'attention'}>
+					<div class="sankey" class:attention={$expandedBlock.id === 'attention'}>
 						<Sankey />
 					</div>
 					<div class="nodes resize-watch">

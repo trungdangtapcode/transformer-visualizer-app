@@ -564,76 +564,6 @@
 		const _pathKeys = Object.keys(pathMap);
 		const _firstFrom = pathMap[_pathKeys[0]]?.[0]?.from;
 		const _firstFromNodes = _firstFrom ? d3.selectAll('' + _firstFrom).size() : 0;
-		console.log('[SANKEY DEBUG]', JSON.stringify({
-			svgSize: `${_svgR.width}x${_svgR.height}`,
-			svgTop: _svgR.top,
-			offset: _off,
-			pathMapKeys: _pathKeys,
-			firstFrom: _firstFrom,
-			firstFromCount: _firstFromNodes,
-			firstSrc: _firstSrcR ? `${_firstSrcR.width}x${_firstSrcR.height}@${_firstSrcR.top}` : 'null',
-			gradientCount: svgEl.querySelectorAll('linearGradient').length,
-		}));
-
-		const svg = d3.select(svgEl);
-		const svgBack = d3.select(svgBackEl);
-
-		[
-			{ dataMap: pathMap, svg },
-			{ dataMap: backPathMap, svg: svgBack }
-		].forEach(({ dataMap, svg }) => {
-			const g = svg
-				.selectAll('g.path-group')
-				.data(Object.keys(dataMap))
-				.join('g')
-				.attr('class', (d) => `path-group ${d}`);
-
-			g.selectAll('path.sankey-path')
-				.data((d) => {
-					const data = dataMap[d].map((item) => {
-						const { from, to, curve, pathGenerator, gradientId, unique, ...rest } = item;
-						// Unwrap Svelte 5 proxy — d3.selectAll may fail on proxied strings
-						const fromStr = '' + from;
-						const toStr = '' + to;
-						const sources = d3.selectAll(fromStr).nodes() as Element[];
-						const targets = d3.selectAll(toStr).nodes() as Element[];
-
-						return sources.map((src, i) => {
-							const source = src?.getBoundingClientRect();
-							const target = targets[i]?.getBoundingClientRect();
-
-							const curveOffset = curve || defaultCurveOffset;
-
-							const generator = pathGenerator || defaultPathGenerator;
-							const path = source && target ? generator(source, target, curveOffset) : '';
-
-							const isLast = targets.length > 1 && i === sources.length - 1;
-							let gradUrl = gradientId;
-
-							if (isLast && !unique && document.getElementById(gradientId + '-last')) {
-								gradUrl = gradientId + '-last';
-							}
-
-							return {
-								isLast: i === sources.length - 1,
-								path,
-								fill:
-									item.type === 'stroke'
-										? 'none'
-										: item.gradientId
-											? `url(#${gradUrl})`
-											: item.fill,
-								opacity: item.opacity,
-								stroke:
-									item.type === 'stroke'
-										? item.gradientId
-											? `url(#${item.gradientId})`
-											: item.fill
-										: 'none',
-								clickable: !!item.onMouseClick,
-								...rest
-							};
-						});
 					});
 
 					return data.flat();
@@ -657,7 +587,6 @@
 			const firstD = allPaths.nodes()[0]?.getAttribute('d')?.substring(0, 80);
 			const firstFill = allPaths.nodes()[0]?.getAttribute('fill');
 			const firstOpacity = allPaths.nodes()[0]?.getAttribute('opacity');
-			console.log(`[SANKEY PATHS] total:${pathCount} emptyD:${emptyD} fill:${firstFill} opacity:${firstOpacity} d:${firstD}`);
 		});
 	};
 
