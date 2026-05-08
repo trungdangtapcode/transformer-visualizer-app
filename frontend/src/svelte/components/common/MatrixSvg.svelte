@@ -77,7 +77,7 @@
 			}
 			plainData.push(plainRow);
 		}
-		console.log('[MatrixSvg] data.length:', len, 'plainData.length:', plainData.length, 'cols:', plainData[0]?.length);
+
 
 		let cells;
 

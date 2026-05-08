@@ -44,24 +44,21 @@
 	export let highlightRow: number | undefined;
 	export let highlightCol: number | undefined;
 
-	let rowLen: number = 0;
-	let dimension: number = 0;
-
-	$: {
-		rowLen = data.length;
-		dimension = data[0]?.length || 0;
-	}
+	// Compute rowLen/dimension inline — NOT via separate $: mutation.
+	// In Svelte 5, two $: blocks where one mutates and the other reads
+	// may execute in wrong order (reads stale initial value rowLen=0).
+	$: rowLen = data.length;
+	$: dimension = data[0]?.length || 0;
 
 	$: props = {
 		data,
 		cellHeight,
 		cellWidth,
-		rowLen,
-		dimension,
+		rowLen: data.length,
+		dimension: data[0]?.length || 0,
 		rowGap,
 		colGap,
 		transpose,
-		// showValue,
 		groupBy,
 		shape,
 		colorScale,
