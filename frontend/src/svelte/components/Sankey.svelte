@@ -650,9 +650,14 @@
 				.on('mouseleave', (e, d) => d.onMouseOut?.(d))
 				.on('click', (e, d) => d.onMouseClick?.(e, d));
 
-			// Debug: count created paths
-			const pathCount = svg.selectAll('path.sankey-path').size();
-			const emptyPaths = svg.selectAll('path.sankey-path').filter((d) => !d.path || d.path === '').size();
+			// Debug: count created paths and check content
+			const allPaths = svg.selectAll('path.sankey-path');
+			const pathCount = allPaths.size();
+			const emptyD = allPaths.nodes().filter(n => !n.getAttribute('d') || n.getAttribute('d').trim() === '').length;
+			const firstD = allPaths.nodes()[0]?.getAttribute('d')?.substring(0, 80);
+			const firstFill = allPaths.nodes()[0]?.getAttribute('fill');
+			const firstOpacity = allPaths.nodes()[0]?.getAttribute('opacity');
+			console.log(`[SANKEY PATHS] total:${pathCount} emptyD:${emptyD} fill:${firstFill} opacity:${firstOpacity} d:${firstD}`);
 		});
 	};
 
