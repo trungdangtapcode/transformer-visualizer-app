@@ -30,10 +30,14 @@
 	let svgBackEl: HTMLOrSVGElement;
 	let svgEl: HTMLOrSVGElement;
 
-	// SVG document-position offset — subtracted from all path coords to convert
-	// document-absolute coordinates to SVG-local coordinates.
-	let svgOffsetTop = 0;
-	let svgOffsetLeft = 0;
+	// Returns the SVG's document-position offset. Computed fresh on every call
+	// (not cached in a variable) because Svelte 5 $: closures would capture
+	// a stale initial value of 0.
+	const getSvgOffset = () => {
+		if (!svgEl) return { top: 0, left: 0 };
+		const r = svgEl.getBoundingClientRect();
+		return { top: r.top + window.scrollY, left: r.left + window.scrollX };
+	};
 
 	let resizeObserver: ResizeObserver;
 	let screenWidth: number;
@@ -105,8 +109,8 @@
 			gradientId: $blockIdx === 0 ? 'gray-blue' : 'transparent-blue',
 			opacity: EMBEDDING,
 			pathGenerator: (source, target, curve: number) => {
-				const scrollTop = window.scrollY - svgOffsetTop;
-				const scrollLeft = window.scrollX - svgOffsetLeft;
+				const _off = getSvgOffset(); const scrollTop = window.scrollY - _off.top;
+				const scrollLeft = window.scrollX - _off.left;
 
 				const rightOffset = 30;
 				const { curveOffset } = pathAdjustor(source, target, curve);
@@ -178,8 +182,8 @@
 			unique: true,
 			curve: 20,
 			pathGenerator: (source, target, curve) => {
-				const scrollTop = window.scrollY - svgOffsetTop;
-				const scrollLeft = window.scrollX - svgOffsetLeft;
+				const _off = getSvgOffset(); const scrollTop = window.scrollY - _off.top;
+				const scrollLeft = window.scrollX - _off.left;
 
 				const sourceMiddleY = source.top + scrollTop + source.height / 2;
 				const targetMiddleX = target.left + scrollLeft + target.width / 2;
@@ -205,8 +209,8 @@
 			pathGenerator: (source, target, curve) => {
 				let curveOffset = curve;
 
-				const scrollTop = window.scrollY - svgOffsetTop;
-				const scrollLeft = window.scrollX - svgOffsetLeft;
+				const _off = getSvgOffset(); const scrollTop = window.scrollY - _off.top;
+				const scrollLeft = window.scrollX - _off.left;
 
 				const sourceMiddleY = source.top + scrollTop + source.height / 2;
 				const targetMiddleY = target.top + scrollTop + target.height / 2;
@@ -231,8 +235,8 @@
 			pathGenerator: (source, target, curve) => {
 				const { curveOffset } = pathAdjustor(source, target, curve);
 
-				const scrollTop = window.scrollY - svgOffsetTop;
-				const scrollLeft = window.scrollX - svgOffsetLeft;
+				const _off = getSvgOffset(); const scrollTop = window.scrollY - _off.top;
+				const scrollLeft = window.scrollX - _off.left;
 
 				return `
 			    M ${source.right + scrollLeft},${source.top + scrollTop}
@@ -274,8 +278,8 @@
 			opacity: ATTENTION_OUT,
 			curve: curveFactor * 30,
 			pathGenerator: (source, target, curve) => {
-				const scrollTop = window.scrollY - svgOffsetTop;
-				const scrollLeft = window.scrollX - svgOffsetLeft;
+				const _off = getSvgOffset(); const scrollTop = window.scrollY - _off.top;
+				const scrollLeft = window.scrollX - _off.left;
 				const { curveOffset } = pathAdjustor(source, target, curve);
 				return `
         M ${source.right + scrollLeft},${source.top + scrollTop} 
@@ -317,8 +321,8 @@
 			curve: 50 + (curveFactor - 1) * 20,
 			opacity: MLP,
 			pathGenerator: (source, target, curve: number) => {
-				const scrollTop = window.scrollY - svgOffsetTop;
-				const scrollLeft = window.scrollX - svgOffsetLeft;
+				const _off = getSvgOffset(); const scrollTop = window.scrollY - _off.top;
+				const scrollLeft = window.scrollX - _off.left;
 
 				const rightOffset = rootRem * 3;
 				const { curveOffset } = pathAdjustor(source, target, curve);
@@ -358,8 +362,8 @@
 			curve: 50 + (curveFactor - 1) * 20,
 			opacity: MLP,
 			pathGenerator: (source, target, curve: number) => {
-				const scrollTop = window.scrollY - svgOffsetTop;
-				const scrollLeft = window.scrollX - svgOffsetLeft;
+				const _off = getSvgOffset(); const scrollTop = window.scrollY - _off.top;
+				const scrollLeft = window.scrollX - _off.left;
 
 				const leftOffset = rootRem * 1.5;
 				const { curveOffset } = pathAdjustor(source, target, curve);
@@ -449,8 +453,8 @@
 				gradientId: $blockIdx === $modelMeta.layer_num - 1 ? 'blue' : 'blue-white-blue',
 				opacity: $blockIdx === $modelMeta.layer_num - 1 ? MLP : TRANSFORMER_BLOCKS,
 				pathGenerator: (source, target, curve) => {
-					const scrollTop = window.scrollY - svgOffsetTop;
-					const scrollLeft = window.scrollX - svgOffsetLeft;
+					const _off = getSvgOffset(); const scrollTop = window.scrollY - _off.top;
+					const scrollLeft = window.scrollX - _off.left;
 					const { curveOffset } = pathAdjustor(source, target, curve);
 					return `
         M ${source.right + scrollLeft},${source.top + scrollTop}
@@ -553,16 +557,6 @@
 		await new Promise((r) => requestAnimationFrame(r));
 		if (!svgEl || !svgBackEl) return;
 
-		// Compute the SVG's offset in the document. All path generators use
-		// getBoundingClientRect() + scrollY/X (document-absolute coords), but the
-		// SVG coordinate system starts at (0,0) at the SVG's top-left corner.
-		// In the original SvelteKit app the SVG was near (0,0). In our React-wrapped
-		// version, the React header shifts everything down. We must subtract the
-		// SVG's own document position from all path coordinates.
-		const svgBounds = svgEl.getBoundingClientRect();
-		svgOffsetTop = svgBounds.top + window.scrollY;
-		svgOffsetLeft = svgBounds.left + window.scrollX;
-
 		const svg = d3.select(svgEl);
 		const svgBack = d3.select(svgBackEl);
 
@@ -645,8 +639,8 @@
 	};
 
 	const defaultPathGenerator = (source, target, curve: number) => {
-		const scrollTop = window.scrollY - svgOffsetTop;
-		const scrollLeft = window.scrollX - svgOffsetLeft;
+		const _off = getSvgOffset(); const scrollTop = window.scrollY - _off.top;
+		const scrollLeft = window.scrollX - _off.left;
 		const { curveOffset } = pathAdjustor(source, target, curve);
 
 		return `
@@ -729,8 +723,8 @@
 		if (!starts.length || !ends.length) return;
 
 		// Convert viewport coords to SVG-local coords (same offset fix as drawPath)
-		const scrollTop = window.scrollY - svgOffsetTop;
-		const scrollLeft = window.scrollX - svgOffsetLeft;
+		const _off = getSvgOffset(); const scrollTop = window.scrollY - _off.top;
+		const scrollLeft = window.scrollX - _off.left;
 
 		const lineData = starts.map((start, i) => {
 			const startEl = start.getBoundingClientRect();
