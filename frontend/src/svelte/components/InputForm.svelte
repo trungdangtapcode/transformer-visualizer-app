@@ -185,6 +185,21 @@
 					>
 					{inputTextTemp}
 				</div>
+				{#if !$isModelRunning}
+					<div
+						bind:this={predictRef}
+						class="predicted"
+						role="none"
+						on:click={(e) => {
+							e.stopPropagation();
+							onFocusInput(e);
+							inputRef.focus();
+							moveCursorToEnd(inputRef);
+						}}
+					>
+						<span>{predictedTokenTemp}</span>
+					</div>
+				{/if}
 				</div>
 				{#if $isModelRunning}
 					<div class="loading"><LoadingDots /></div>
