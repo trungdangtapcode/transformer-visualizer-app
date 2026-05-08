@@ -33,28 +33,13 @@
 
 	let useCustomInput = false;
 
-	// When a token is predicted, immediately merge it into inputText store.
-	// No separate predictedTokenTemp — treat predicted as part of input.
-	let predictedTokenTemp = '';
-	$: {
-		const newPredicted = $predictedToken?.token || '';
-		if (newPredicted && newPredicted !== predictedTokenTemp) {
-			predictedTokenTemp = newPredicted;
-			// Merge predicted token into input store immediately
-			const merged = (($inputText || '') + newPredicted).replace(/[\s\n]+/g, ' ');
-			inputText.set(merged);
-		}
-	}
-
 	$: inputTextTemp = $inputText || '';
+	$: predictedTokenTemp = $predictedToken?.token || '';
 
 	const wordLimit = 12;
 	$: exceedLimit = inputTextTemp.split(' ').length >= wordLimit;
 
 	const onFocusInput = (e) => {
-		inputTextTemp = $inputText || '';
-		predictedTokenTemp = '';
-		if (inputRef) inputRef.innerText = inputTextTemp;
 	};
 
 	const onInput = (e) => {
@@ -65,10 +50,13 @@
 		completeCurrentAnimation();
 
 		setTimeout(() => {
+			// Merge predicted token into input, then submit
+			const text = (($inputText || '') + ($predictedToken?.token || '')).replace(/[\s\n]+/g, ' ');
+			if (inputRef) inputRef.innerText = text;
+
 			textPages.find((page) => page.id === 'how-transformers-work')?.complete();
 
-			// Input already contains predicted token — just set it
-			inputText.set(inputTextTemp);
+			inputText.set(text);
 
 			window.dataLayer?.push({
 				event: 'generate-next-token',
