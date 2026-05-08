@@ -557,13 +557,64 @@
 		await new Promise((r) => requestAnimationFrame(r));
 		if (!svgEl || !svgBackEl) return;
 
-		const _svgR = svgEl.getBoundingClientRect();
-		const _off = getSvgOffset();
-		const _firstSrc = document.querySelector('.embedding .column .vector');
-		const _firstSrcR = _firstSrc?.getBoundingClientRect();
-		const _pathKeys = Object.keys(pathMap);
-		const _firstFrom = pathMap[_pathKeys[0]]?.[0]?.from;
-		const _firstFromNodes = _firstFrom ? d3.selectAll('' + _firstFrom).size() : 0;
+		const svg = d3.select(svgEl);
+		const svgBack = d3.select(svgBackEl);
+
+		[
+			{ dataMap: pathMap, svg },
+			{ dataMap: backPathMap, svg: svgBack }
+		].forEach(({ dataMap, svg }) => {
+			const g = svg
+				.selectAll('g.path-group')
+				.data(Object.keys(dataMap))
+				.join('g')
+				.attr('class', (d) => `path-group ${d}`);
+
+			g.selectAll('path.sankey-path')
+				.data((d) => {
+					const data = dataMap[d].map((item) => {
+						const { from, to, curve, pathGenerator, gradientId, unique, ...rest } = item;
+						const fromStr = '' + from;
+						const toStr = '' + to;
+						const sources = d3.selectAll(fromStr).nodes() as Element[];
+						const targets = d3.selectAll(toStr).nodes() as Element[];
+
+						return sources.map((src, i) => {
+							const source = src?.getBoundingClientRect();
+							const target = targets[i]?.getBoundingClientRect();
+
+							const curveOffset = curve || defaultCurveOffset;
+
+							const generator = pathGenerator || defaultPathGenerator;
+							const path = source && target ? generator(source, target, curveOffset) : '';
+
+							const isLast = targets.length > 1 && i === sources.length - 1;
+							let gradUrl = gradientId;
+
+							if (isLast && !unique && document.getElementById(gradientId + '-last')) {
+								gradUrl = gradientId + '-last';
+							}
+
+							return {
+								isLast: i === sources.length - 1,
+								path,
+								fill:
+									item.type === 'stroke'
+										? 'none'
+										: item.gradientId
+											? `url(#${gradUrl})`
+											: item.fill,
+								opacity: item.opacity,
+								stroke:
+									item.type === 'stroke'
+										? item.gradientId
+											? `url(#${item.gradientId})`
+											: item.fill
+										: 'none',
+								clickable: !!item.onMouseClick,
+								...rest
+							};
+						});
 					});
 
 					return data.flat();
@@ -580,13 +631,7 @@
 				.on('mouseleave', (e, d) => d.onMouseOut?.(d))
 				.on('click', (e, d) => d.onMouseClick?.(e, d));
 
-			// Debug: count created paths and check content
-			const allPaths = svg.selectAll('path.sankey-path');
-			const pathCount = allPaths.size();
-			const emptyD = allPaths.nodes().filter(n => !n.getAttribute('d') || n.getAttribute('d').trim() === '').length;
-			const firstD = allPaths.nodes()[0]?.getAttribute('d')?.substring(0, 80);
-			const firstFill = allPaths.nodes()[0]?.getAttribute('fill');
-			const firstOpacity = allPaths.nodes()[0]?.getAttribute('opacity');
+
 		});
 	};
 
