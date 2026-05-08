@@ -548,6 +548,12 @@
 		await tick();
 		await new Promise((r) => requestAnimationFrame(r));
 		if (!svgEl || !svgBackEl) return;
+
+		// Debug: check SVG dimensions and existing paths
+		const svgRect = svgEl.getBoundingClientRect();
+		const existingPaths = svgEl.querySelectorAll('path.sankey-path').length;
+		console.log(`[Sankey drawPath] svg: ${svgRect.width}x${svgRect.height}, existing paths: ${existingPaths}`);
+
 		const svg = d3.select(svgEl);
 		const svgBack = d3.select(svgBackEl);
 
@@ -565,8 +571,13 @@
 				.data((d) => {
 					const data = dataMap[d].map((item) => {
 						const { from, to, curve, pathGenerator, gradientId, unique, ...rest } = item;
-						const sources = d3.selectAll(from).nodes() as Element[];
-						const targets = d3.selectAll(to).nodes() as Element[];
+						// Unwrap Svelte 5 proxy — d3.selectAll may fail on proxied strings
+						const fromStr = '' + from;
+						const toStr = '' + to;
+						const sources = d3.selectAll(fromStr).nodes() as Element[];
+						const targets = d3.selectAll(toStr).nodes() as Element[];
+						if (sources.length === 0) console.warn(`[Sankey] no sources for: "${fromStr}"`);
+						if (targets.length === 0) console.warn(`[Sankey] no targets for: "${toStr}"`);
 
 						return sources.map((src, i) => {
 							const source = src?.getBoundingClientRect();
@@ -619,6 +630,11 @@
 				.on('mouseenter', (e, d) => d.onMouseOver?.(d))
 				.on('mouseleave', (e, d) => d.onMouseOut?.(d))
 				.on('click', (e, d) => d.onMouseClick?.(e, d));
+
+			// Debug: count created paths
+			const pathCount = svg.selectAll('path.sankey-path').size();
+			const emptyPaths = svg.selectAll('path.sankey-path').filter((d) => !d.path || d.path === '').size();
+			console.log(`[Sankey] created ${pathCount} paths (${emptyPaths} empty)`);
 		});
 	};
 
