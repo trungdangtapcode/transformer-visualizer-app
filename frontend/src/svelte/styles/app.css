@@ -1,0 +1,3 @@
+/* Tailwind CSS is loaded via @tailwindcss/vite plugin in vite.config.ts.
+   No @tailwind directives needed — Tailwind 4 scans source files automatically. */
+@import "tailwindcss";

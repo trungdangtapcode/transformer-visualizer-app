@@ -21,8 +21,10 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "~/*": ["./src/svelte/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/svelte/**/*.svelte"]
 }
